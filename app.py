@@ -8,7 +8,7 @@ import yfinance as yf
 
 # Page Configuration
 st.set_page_config(
-    page_title="AI Stock Trade Planner", page_icon="📈", layout="wide"
+    page_title="Free AI Stock Trade Planner", page_icon="📈", layout="wide"
 )
 
 # Custom Styling (Dark Terminal Theme)
@@ -22,7 +22,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.title("📈 AI Stock Trade Planner Agent")
+st.title("📈 Free AI Stock Trade Planner (Powered by Gemini)")
 st.markdown(
     "Enter any equity ticker (e.g., `AAPL`, `RELIANCE.NS`, `TSLA`, `TATAMOTORS.NS`) to calculate technical indicators and generate an AI-backed trade plan."
 )
@@ -37,7 +37,7 @@ class StockTradePlan(BaseModel):
       description="Calculated stop loss price based on ATR/support"
   )
   target_price: float = Field(
-      description="Calculated profit target based on risk-reward"
+      description="Calculated profit target based-on risk-reward"
   )
   risk_reward_ratio: str = Field(description="Risk-to-reward ratio (e.g., 1:2.5)")
   confidence_score: int = Field(description="Agent confidence score from 1 to 10")
@@ -87,26 +87,29 @@ def calculate_technicals(ticker: str) -> dict:
 with st.sidebar:
   st.header("⚙️ Configuration")
   ticker_input = st.text_input("Stock Ticker", value="AAPL").upper()
+  # Free Gemini API Key Input
   api_key_input = st.text_input(
-      "OpenAI API Key", type="password", placeholder="sk-..."
+      "Gemini API Key (Free)", type="password", placeholder="AIzaSy..."
   )
+  st.caption("Get a free key at [aistudio.google.com](https://aistudio.google.com)")
   run_button = st.button("Generate Trade Plan", type="primary")
 
 # 4. Execution Logic & Web Dashboard Rendering
 if run_button:
   if not api_key_input:
-    st.error("Please enter your OpenAI API key in the sidebar configuration.")
+    st.error("Please enter your free Gemini API key in the sidebar configuration.")
   else:
-    os.environ["OPENAI_API_KEY"] = api_key_input
+    # Set Google API key environment variable for PydanticAI
+    os.environ["GEMINI_API_KEY"] = api_key_input
 
     try:
       with st.spinner(
-          f"Fetching live market data & running agent analysis for"
+          f"Fetching live market data & running Gemini agent analysis for"
           f" {ticker_input}..."
       ):
-        # Configure PydanticAI Agent (Using output_type instead of result_type)
+        # Configure PydanticAI Agent to use Google Gemini free tier
         stock_agent = Agent(
-            "openai:gpt-4o",
+            "google-gla:gemini-2.5-flash",
             output_type=StockTradePlan,
             system_prompt=(
                 "You are an expert quantitative trading assistant. Analyze the"
