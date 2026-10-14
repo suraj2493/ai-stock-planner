@@ -13,7 +13,7 @@ st.set_page_config(
     page_title="Free AI Stock Trade Planner",
     page_icon="📈",
     layout="wide",
-    initial_sidebar_state="expanded",  # <-- Forces sidebar to stay open
+    initial_sidebar_state="expanded",
 )
 
 # Dark Terminal Dashboard Aesthetic
@@ -136,9 +136,9 @@ if run_button:
           f"Fetching live market data & running Gemini agent analysis for"
           f" {ticker_input}..."
       ):
-        # Configure PydanticAI Agent with correct 'google:gemini-2.5-flash' provider string
+        # Configure PydanticAI Agent with the updated 'google:gemini-3.8-flash' model string
         stock_agent = Agent(
-            "google:gemini-2.5-flash",
+            "google:gemini-3.8-flash",
             output_type=StockTradePlan,
             system_prompt=(
                 "You are an expert quantitative trading assistant. Analyze the"
