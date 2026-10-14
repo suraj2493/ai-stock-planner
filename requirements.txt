@@ -1,1 +1,6 @@
-
+streamlit
+yfinance
+pydantic-ai
+pandas
+numpy
+openai
