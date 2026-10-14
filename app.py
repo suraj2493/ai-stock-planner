@@ -104,10 +104,10 @@ if run_button:
           f"Fetching live market data & running agent analysis for"
           f" {ticker_input}..."
       ):
-        # Configure PydanticAI Agent
+        # Configure PydanticAI Agent (Using output_type instead of result_type)
         stock_agent = Agent(
             "openai:gpt-4o",
-            result_type=StockTradePlan,
+            output_type=StockTradePlan,
             system_prompt=(
                 "You are an expert quantitative trading assistant. Analyze the"
                 " technical math data provided by the tool, verify risk-reward"
@@ -147,4 +147,3 @@ if run_button:
 
     except Exception as e:
       st.error(f"An error occurred during execution: {e}")
-
