@@ -7,10 +7,13 @@ import streamlit as st
 import yfinance as yf
 
 # -----------------------------------------------------------------------------
-# 1. Page & UI Custom Theme Settings
+# 1. Page & UI Custom Theme Settings (Forced Sidebar Expanded)
 # -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Free AI Stock Trade Planner", page_icon="📈", layout="wide"
+    page_title="Free AI Stock Trade Planner",
+    page_icon="📈",
+    layout="wide",
+    initial_sidebar_state="expanded",  # <-- Forces sidebar to stay open
 )
 
 # Dark Terminal Dashboard Aesthetic
@@ -104,3 +107,78 @@ def calculate_technicals(ticker: str) -> dict:
 
 
 # -----------------------------------------------------------------------------
+# 4. Sidebar Configuration Controls
+# -----------------------------------------------------------------------------
+with st.sidebar:
+  st.header("⚙️ Configuration")
+  ticker_input = st.text_input("Stock Ticker", value="AAPL").upper()
+
+  # Free Gemini API Key Input
+  api_key_input = st.text_input(
+      "Gemini API Key (Free)", type="password", placeholder="AIzaSy..."
+  )
+  st.caption("Get a free key at [aistudio.google.com](https://aistudio.google.com)")
+
+  run_button = st.button("Generate Trade Plan", type="primary")
+
+# -----------------------------------------------------------------------------
+# 5. Agent Execution Loop & Dashboard Renderer
+# -----------------------------------------------------------------------------
+if run_button:
+  if not api_key_input:
+    st.error("Please enter your free Gemini API key in the sidebar configuration.")
+  else:
+    # Set Google API key environment variable for PydanticAI
+    os.environ["GEMINI_API_KEY"] = api_key_input
+
+    try:
+      with st.spinner(
+          f"Fetching live market data & running Gemini agent analysis for"
+          f" {ticker_input}..."
+      ):
+        # Configure PydanticAI Agent with correct 'google:gemini-2.5-flash' provider string
+        stock_agent = Agent(
+            "google:gemini-2.5-flash",
+            output_type=StockTradePlan,
+            system_prompt=(
+                "You are an expert quantitative trading assistant. Analyze the"
+                " technical math data provided by the tool, verify risk-reward"
+                " parameters, assign a realistic confidence score (1 to 10), and craft"
+                " a professional trading recommendation breakdown."
+            ),
+        )
+
+        @stock_agent.tool
+        def get_stock_data(ctx: RunContext[None], ticker: str) -> dict:
+          return calculate_technicals(ticker)
+
+        prompt = f"Analyze {ticker_input}, fetch its technical indicators, and generate a structured trade plan."
+
+        # Execute agent synchronously
+        result = stock_agent.run_sync(prompt)
+        plan = result.data
+
+      st.success("Trade Plan Generated Successfully!")
+
+      # Top Level Metric Cards
+      col1, col2, col3, col4 = st.columns(4)
+      col1.metric("Current Price", f"${plan.current_price}")
+      col2.metric("Buy / Entry Price", f"${plan.buy_price}")
+      col3.metric("Stop-Loss", f"${plan.stop_loss}", delta_color="inverse")
+      col4.metric("Target Price", f"${plan.target_price}")
+
+      st.markdown("---")
+
+      # Detailed Rationale Section
+      st.subheader("📊 Technical Rationale & Agent Evaluation")
+      col_a, col_b = st.columns(2)
+      with col_a:
+        st.write(f"**Asset Symbol:** `{plan.ticker}`")
+        st.write(f"**Target Risk/Reward:** `{plan.risk_reward_ratio}`")
+      with col_b:
+        st.metric("Agent Confidence Rating", f"{plan.confidence_score} / 10")
+
+      st.info(plan.reasoning)
+
+    except Exception as e:
+      st.error(f"An error occurred during execution: {e}")
